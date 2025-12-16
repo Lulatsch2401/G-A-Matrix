@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix GUT & AUSSEHEND</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: monospace; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const words = ['GUT', 'AUSSEHEND'];
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ0123456789@#$%^&*()'.split('');
+        let currentWordIndex = 0;
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0F0';
+            ctx.font = `${fontSize}px monospace`;
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+
+                // Wort-Integration: Zufällig ein Wort einblenden
+                if (Math.random() > 0.98) {
+                    const word = words[currentWordIndex % words.length];
+                    const x = i * fontSize;
+                    const y = drops[i] * fontSize;
+                    ctx.fillStyle = '#0F0';
+                    ctx.font = `${fontSize * 1.2}px monospace`;
+                    ctx.fillText(word, x, y);
+                    currentWordIndex++;
+                }
+            }
+        }
+
+        setInterval(draw, 50);
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
