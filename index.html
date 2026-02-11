@@ -10,47 +10,56 @@
     </style>
 </head>
 <body>
-    <!-- Bild, das über den Bildschirm fliegt -->
-    <img id="flyImage" src="img/bild.png" style="display:none;">
-
     <canvas id="matrix"></canvas>
     <script>
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
+
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         const words = ['GUT', 'AUSSEHEND'];
-        const fontSize = 15;
+        const fontSize = 14;
         const columns = canvas.width / fontSize;
         const drops = Array(Math.floor(columns)).fill(1);
 
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ0123456789@#$%^&*()'.split('');
         let currentWordIndex = 0;
 
-        // Bild-Setup
-        const img = document.getElementById('flyImage');
-        let imgX = -200;
-        let imgY = canvas.height / 3;
-        let imgSpeed = 8;
-        let imgActive = false;
-        let imgWidth = 200;
-        let imgHeight = 100;
+        // 👉 HIER DEINE BILDER EINTRAGEN
+        const images = [
+            'img/Becker.JPG',
+        ];
 
-        // Beim Start einmal fliegen lassen
-        imgActive = true;
+        let flyingImage = null;
+        const maxInterval = 5 * 60 * 1000; // 5 Minuten
 
-        function maybeStartImageFlight() {
-            if (!imgActive && Math.random() > 0.995) {
-                imgActive = true;
-                imgX = -imgWidth;
-                imgY = Math.random() * (canvas.height - imgHeight);
-            }
+        function spawnImage() {
+            const img = new Image();
+            img.src = images[Math.floor(Math.random() * images.length)];
+
+            flyingImage = {
+                img: img,
+                x: -200,
+                y: Math.random() * (canvas.height - 200),
+                size: 150 + Math.random() * 100,
+                speed: 4 + Math.random() * 4
+            };
+        }
+
+        function scheduleNextSpawn() {
+            const nextTime = Math.random() * maxInterval;
+
+            setTimeout(() => {
+                spawnImage();
+                scheduleNextSpawn();
+            }, nextTime);
         }
 
         function draw() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             ctx.fillStyle = '#0F0';
             ctx.font = `${fontSize}px monospace`;
 
@@ -67,27 +76,39 @@
                     const word = words[currentWordIndex % words.length];
                     const x = i * fontSize;
                     const y = drops[i] * fontSize;
-                    ctx.fillStyle = '#0F0';
+
                     ctx.font = `${fontSize * 1.2}px monospace`;
                     ctx.fillText(word, x, y);
+                    ctx.font = `${fontSize}px monospace`;
+
                     currentWordIndex++;
-                    ctx.font = `${fontSize}px monospace`; // font zurücksetzen
                 }
             }
 
-            // Bild zeichnen, wenn aktiv
-            if (imgActive && img.complete) {
-                ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
-                imgX += imgSpeed;
+            // 👉 Bild zeichnen
+            if (flyingImage && flyingImage.img.complete) {
+                ctx.drawImage(
+                    flyingImage.img,
+                    flyingImage.x,
+                    flyingImage.y,
+                    flyingImage.size,
+                    flyingImage.size
+                );
 
-                if (imgX > canvas.width + imgWidth) {
-                    imgActive = false;
+                flyingImage.x += flyingImage.speed;
+
+                // Bild entfernen wenn außerhalb
+                if (flyingImage.x > canvas.width + flyingImage.size) {
+                    flyingImage = null;
                 }
             }
-
-            // eventuell neuen Flug starten
-            maybeStartImageFlight();
         }
+
+        // 👉 Sofort beim Start (Debug)
+        spawnImage();
+
+        // 👉 Weitere zufällige Spawns
+        scheduleNextSpawn();
 
         setInterval(draw, 50);
 
