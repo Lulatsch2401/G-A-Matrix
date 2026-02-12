@@ -11,6 +11,7 @@
 </head>
 <body>
     <canvas id="matrix"></canvas>
+
     <script>
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
@@ -26,13 +27,18 @@
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ0123456789@#$%^&*()'.split('');
         let currentWordIndex = 0;
 
-        // 👉 HIER DEINE BILDER EINTRAGEN
         const images = [
             'img/Becker.png',
+            'img/Toni.png',
         ];
 
         let flyingImage = null;
-        const maxInterval = 5 * 60 * 1000; // 5 Minuten
+        let prevImageState = null;
+
+        const maxInterval = 5 * 60 * 1000;
+
+        // 👉 Einstellbare Schlierenstärke (0.1 – 0.6)
+        const IMAGE_TRAIL_ALPHA = 0.35;
 
         function spawnImage() {
             const img = new Image();
@@ -43,8 +49,10 @@
                 x: -200,
                 y: Math.random() * (canvas.height - 200),
                 size: 150 + Math.random() * 100,
-                speed: 2 + Math.random() * 4
+                speed: 1 + Math.random() * 4
             };
+
+            prevImageState = null;
         }
 
         function scheduleNextSpawn() {
@@ -57,6 +65,8 @@
         }
 
         function draw() {
+
+            // Matrix Fade
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -64,6 +74,7 @@
             ctx.font = `${fontSize}px monospace`;
 
             for (let i = 0; i < drops.length; i++) {
+
                 const text = chars[Math.floor(Math.random() * chars.length)];
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
@@ -85,8 +96,21 @@
                 }
             }
 
-            // 👉 Bild zeichnen
+            // 👉 Bild mit sanfter Schlieren-Logik
             if (flyingImage && flyingImage.img.complete) {
+
+                // Alte Position leicht abdunkeln (Trail)
+                if (prevImageState) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${IMAGE_TRAIL_ALPHA})`;
+                    ctx.fillRect(
+                        prevImageState.x - 2,
+                        prevImageState.y - 2,
+                        prevImageState.size + 4,
+                        prevImageState.size + 4
+                    );
+                }
+
+                // Bild zeichnen
                 ctx.drawImage(
                     flyingImage.img,
                     flyingImage.x,
@@ -95,19 +119,23 @@
                     flyingImage.size
                 );
 
+                // Zustand merken
+                prevImageState = {
+                    x: flyingImage.x,
+                    y: flyingImage.y,
+                    size: flyingImage.size
+                };
+
                 flyingImage.x += flyingImage.speed;
 
-                // Bild entfernen wenn außerhalb
                 if (flyingImage.x > canvas.width + flyingImage.size) {
                     flyingImage = null;
+                    prevImageState = null;
                 }
             }
         }
 
-        // 👉 Sofort beim Start (Debug)
         spawnImage();
-
-        // 👉 Weitere zufällige Spawns
         scheduleNextSpawn();
 
         setInterval(draw, 50);
